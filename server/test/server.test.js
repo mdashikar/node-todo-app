@@ -191,8 +191,8 @@ describe('POST /users', () => {
             .send({email, password})
             .expect(200)
             .expect( (res) => {
-                expect(res.headers['x-auth']).toBeTruthly();
-                expect(res.body._id).toBeTruthly();
+                expect(res.headers['x-auth']).toBeTruthy();
+                expect(res.body._id).toBeTruthy();
                 expect(res.body.email).toBe(email);
             })
             .end((err) => {
@@ -200,10 +200,10 @@ describe('POST /users', () => {
                     return done(err);
                 }
                 Users.findOne({email}).then( (users) =>{
-                    expect(users).toExist();
-                    expect(users.password).toNotBe(password);
+                    expect(users).toBeTruthy();
+                    expect(users.password).not.toBe(password);
                     done();
-                })
+                }).catch((e) => done(e));
             });
     });
     it('should return validation error if request invalid', (done) => {
@@ -226,5 +226,54 @@ describe('POST /users', () => {
             })
             .expect(400)
             .end(done)
+    });
+});
+
+describe('POST /users/login', () => {
+    it('should check login and auth token', (done)=> {
+        request(app)
+            .post('/users/login')
+            .send({
+                email: users[1].email,
+                password: users[1].password
+            })
+            .expect(200)
+            .expect((res) => {
+                expect(res.headers['x-auth']).toBeTruthy();
+            })
+            .end((err, res) => {
+                if(err){
+                    return done(err);
+                }
+                Users.findById(users[1]._id).then((users) => {
+                    expect(users.tokens[0]).toContain({
+                        _id: '59cf97b0be573212f0eda6f0',
+                        access: 'auth',
+                        token: res.headers['x-auth']
+                    });
+                    done();
+                }).catch((e) => done(e));
+            })
+    });
+    it('should check an invalid login', (done) => {
+        request(app)
+            .post('/users/login')
+            .send({
+                email: users[1].email,
+                password: users[1].password + '23'
+            })
+            .expect(400)
+            .expect( (res) => {
+                expect(res.headers['x-auth']).toBeFalsy();
+            })
+            .end((err, res) => {
+                if(err){
+                    return done(err);
+                }
+                Users.findById(users[1]._id).then((users) => {
+                    expect(users.tokens.length).toBe(0);
+                    done();
+                }).catch((e) => done(e));
+            })
     });
 });
