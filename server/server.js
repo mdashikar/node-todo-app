@@ -130,6 +130,14 @@ app.get('/users', (req, res) => {
 
 });
 
+app.delete('/users/me/token', authenticate , (req, res) => {
+    req.users.removeToken(req.token).then( () => {
+        res.status(200).send();
+    }, () => {
+        res.status(401).send();
+    });
+});
+
 //post route for login
 app.post('/users/login', (req, res) => {
     var body = _.pick(req.body, ['email', 'password']);
