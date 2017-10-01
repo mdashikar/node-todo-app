@@ -294,8 +294,7 @@ describe('POST /users/login', () => {
                     return done(err);
                 }
                 Users.findById(users[1]._id).then((users) => {
-                    expect(users.tokens[1]).toContain({
-                        _id: '59cf97b0be573212f0eda6f0',
+                    expect(users.tokens[1]).toMatchObject({
                         access: 'auth',
                         token: res.headers['x-auth']
                     });
